@@ -6,7 +6,7 @@ import okhttp3.Request
 import java.io.IOException
 import java.util.concurrent.TimeUnit
 import kotlin.math.roundToInt
-import kotlin.system.exitProcess
+import java.io.File
 
 @JsonClass(generateAdapter = true)
 data class Temperature(
@@ -57,5 +57,18 @@ fun main(args: Array<String>) {
     } else {
         println("Use a template")
         println("-c LATITUDE,LONGITUDE")
+    }
+    if(args.size == 4) {
+        if(args[2] == "-f") {
+            val coord = args[1].split(",")
+            val response = getResponse(coord[0], coord[1])
+            val temperature = parseJsonString(response)
+
+            File(args[3]).writeText("${temperature?.roundToInt()}")
+            println("File created")
+        }
+        else {
+            println("Invalid file path")
+        }
     }
 }
