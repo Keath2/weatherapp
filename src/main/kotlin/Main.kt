@@ -37,8 +37,10 @@ fun getResponse(lat: String, lon: String): String? {
     val request = Request.Builder()
         .url(url)
         .build()
-    client.newCall(request).execute().use { response ->
-        if (!response.isSuccessful) throw IOException("Connection error $response")
+     client.newCall(request).execute().use { response ->
+        if (!response.isSuccessful) {
+            throw IOException("Connection error $response")
+        }
         val jsonData = response.body?.string()
         return jsonData
     }
@@ -47,28 +49,40 @@ fun getResponse(lat: String, lon: String): String? {
 fun main(args: Array<String>) {
     if(args.size == 2 && args[0] == "-c") {
         val coord = args[1].split(",")
-        if(coord.size == 2) {
+        if(coord.size == 2 && coord[0].toDoubleOrNull() != null && coord[1].toDoubleOrNull() != null) {
             val response = getResponse(coord[0], coord[1])
             val temperature = parseJsonString(response)
             println(temperature?.roundToInt())
         } else {
             println("Input latitude and longitude")
         }
+    } else if(args.size == 4 && args[0] == "-c" && args[2] == "-f") {
+        val coord = args[1].split(",")
+        val response = getResponse(coord[0], coord[1])
+        val temperature = parseJsonString(response)
+        if(coord.size == 2 && coord[0].toDoubleOrNull() != null && coord[1].toDoubleOrNull() != null) {
+            val file = File(args[3])
+            if(file.exists()) {
+                if(file.canWrite()) {
+                    file.writeText("${temperature?.roundToInt()}")
+                    println("File created")
+                } else {
+                    println("File can't be a written")
+                }
+            } else {
+                try {
+                    file.createNewFile()
+                    file.writeText("${temperature?.roundToInt()}")
+                    println("File created")
+                } catch (e: IOException) {
+                    println("File creation error")
+                }
+            }
+        } else {
+            println("Input latitude and longitude")
+        }
     } else {
         println("Use a template")
-        println("-c LATITUDE,LONGITUDE")
-    }
-    if(args.size == 4) {
-        if(args[2] == "-f") {
-            val coord = args[1].split(",")
-            val response = getResponse(coord[0], coord[1])
-            val temperature = parseJsonString(response)
-
-            File(args[3]).writeText("${temperature?.roundToInt()}")
-            println("File created")
-        }
-        else {
-            println("Invalid file path")
-        }
+        println("-c LATITUDE,LONGITUDE [-f PATH]")
     }
 }
